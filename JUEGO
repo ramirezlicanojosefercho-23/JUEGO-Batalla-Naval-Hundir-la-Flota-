@@ -1,0 +1,241 @@
+import random
+
+# ==========================
+# CLASE CASILLA
+# ==========================
+class Casilla:
+    def __init__(self):
+        self.__ocupada = False
+        self.__impactada = False
+
+    def colocar_barco(self):
+        self.__ocupada = True
+
+    def disparar(self):
+        self.__impactada = True
+
+    def esta_ocupada(self):
+        return self.__ocupada
+
+    def fue_impactada(self):
+        return self.__impactada
+
+
+# ==========================
+# CLASE BARCO
+# ==========================
+class Barco:
+    def __init__(self, nombre, tamaño):
+        self._nombre = nombre
+        self._tamaño = tamaño
+
+    def mostrar_info(self):
+        print(f"{self._nombre} ocupa {self._tamaño} casillas")
+
+    def get_tamaño(self):
+        return self._tamaño
+
+
+# ==========================
+# HERENCIA
+# ==========================
+class Destructor(Barco):
+    def __init__(self):
+        super().__init__("Destructor", 2)
+
+    def mostrar_info(self):
+        print("Destructor -> 2 casillas")
+
+
+class Acorazado(Barco):
+    def __init__(self):
+        super().__init__("Acorazado", 4)
+
+    def mostrar_info(self):
+        print("Acorazado -> 4 casillas")
+
+
+# ==========================
+# CLASE TABLERO
+# ==========================
+class Tablero:
+    def __init__(self, tamaño):
+        self.tamaño = tamaño
+
+        self.matriz = [
+            [Casilla() for _ in range(tamaño)]
+            for _ in range(tamaño)
+        ]
+
+        self.casillas_barco = 0
+        self.impactos = 0
+
+    def colocar_barco(self, barco):
+
+        colocado = False
+
+        while not colocado:
+
+            fila = random.randint(0, self.tamaño - 1)
+            columna = random.randint(0, self.tamaño - barco.get_tamaño())
+
+            libre = True
+
+            for i in range(barco.get_tamaño()):
+                if self.matriz[fila][columna + i].esta_ocupada():
+                    libre = False
+
+            if libre:
+
+                for i in range(barco.get_tamaño()):
+                    self.matriz[fila][columna + i].colocar_barco()
+
+                self.casillas_barco += barco.get_tamaño()
+                colocado = True
+
+    def disparar(self, fila, columna):
+
+        casilla = self.matriz[fila][columna]
+
+        if casilla.fue_impactada():
+            print("Ya disparaste aquí.")
+            return False
+
+        casilla.disparar()
+
+        if casilla.esta_ocupada():
+            self.impactos += 1
+            print("💥 ¡Impacto!")
+            return True
+        else:
+            print("🌊 Agua")
+            return False
+
+    def victoria(self):
+        return self.impactos == self.casillas_barco
+
+    def mostrar(self):
+
+        print("\n   0 1 2 3 4")
+
+        for i, fila in enumerate(self.matriz):
+
+            print(i, end="  ")
+
+            for casilla in fila:
+
+                if not casilla.fue_impactada():
+                    print("-", end=" ")
+
+                elif casilla.esta_ocupada():
+                    print("X", end=" ")
+
+                else:
+                    print("O", end=" ")
+
+            print()
+
+
+# ==========================
+# GUARDAR PUNTAJES
+# ==========================
+def guardar_puntaje(nombre, puntos):
+
+    with open("puntajes.txt", "a", encoding="utf-8") as archivo:
+        archivo.write(f"{nombre} - {puntos} puntos\n")
+
+
+# ==========================
+# MOSTRAR PUNTAJES
+# ==========================
+def mostrar_puntajes():
+
+    print("\n=== PUNTAJES GUARDADOS ===")
+
+    try:
+
+        with open("puntajes.txt", "r", encoding="utf-8") as archivo:
+
+            contenido = archivo.read()
+
+            if contenido.strip() == "":
+                print("No hay puntajes registrados.")
+            else:
+                print(contenido)
+
+    except FileNotFoundError:
+        print("Aún no existe el archivo de puntajes.")
+
+
+# ==========================
+# PROGRAMA PRINCIPAL
+# ==========================
+print("=" * 40)
+print("      BATALLA NAVAL")
+print("=" * 40)
+
+jugador = input("Nombre del jugador: ")
+
+tablero = Tablero(5)
+
+barcos = [
+    Destructor(),
+    Destructor(),
+    Acorazado()
+]
+
+print("\nBarcos en la partida:")
+
+for barco in barcos:
+    barco.mostrar_info()      # Polimorfismo
+    tablero.colocar_barco(barco)
+
+turnos = 15
+puntos = 0
+
+while turnos > 0:
+
+    print("\n--------------------")
+    print("Turnos restantes:", turnos)
+    print("Puntos:", puntos)
+
+    tablero.mostrar()
+
+    try:
+
+        fila = int(input("\nFila (0-4): "))
+        columna = int(input("Columna (0-4): "))
+
+        if fila < 0 or fila > 4 or columna < 0 or columna > 4:
+            raise ValueError
+
+        impacto = tablero.disparar(fila, columna)
+
+        if impacto:
+            puntos += 10
+
+        if tablero.victoria():
+
+            print("\n🏆 ¡FELICIDADES!")
+            print("Has hundido toda la flota.")
+            print("Puntaje final:", puntos)
+
+            guardar_puntaje(jugador, puntos)
+
+            break
+
+        turnos -= 1
+
+    except ValueError:
+        print("Debes ingresar números entre 0 y 4.")
+
+else:
+
+    print("\n❌ Se acabaron los turnos.")
+    print("Puntaje final:", puntos)
+
+    guardar_puntaje(jugador, puntos)
+
+print("\nPuntaje guardado correctamente.")
+
+mostrar_puntajes()
