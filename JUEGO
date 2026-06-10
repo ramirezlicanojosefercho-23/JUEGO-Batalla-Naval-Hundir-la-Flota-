@@ -203,8 +203,8 @@ while turnos > 0:
 
     try:
 
-        fila = int(input("\nFila (0-4): "))
-        columna = int(input("Columna (0-4): "))
+        fila = int(input("\nFila (1-4): "))
+        columna = int(input("Columna (1-4): "))
 
         if fila < 0 or fila > 4 or columna < 0 or columna > 4:
             raise ValueError
